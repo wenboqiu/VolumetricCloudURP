@@ -1,24 +1,17 @@
-#ifndef CLOUDS_INCLUDED4
-#define CLOUDS_INCLUDED4
+#ifndef CLOUDS_INCLUDED
+#define CLOUDS_INCLUDED
 #include <HLSLSupport.cginc>
 //modify to skybox
 
 
-// uniform sampler2D_float _CameraDepthTexture;
-
-// uniform float4x4 _CameraInvViewMatrix;
-// uniform float4x4 _FrustumCornersES;
 uniform float4 _CameraWS;
-// uniform float _FarPlane;
 
-// uniform sampler2D _AltoClouds;
 uniform sampler3D _ShapeTexture;
 uniform sampler3D _DetailTexture;
 uniform sampler2D _WeatherTexture;
 uniform sampler2D _CurlNoise;
 uniform sampler2D _BlueNoise;
 uniform float4 _BlueNoise_TexelSize;
-// uniform float4 _Randomness;
 uniform float _SampleMultiplier;
 
 uniform float3 _SunDir;
@@ -51,20 +44,10 @@ uniform float _CurlDistortAmount;
 
 uniform float _CloudSpeed;
 uniform float3 _WindDirection;
-// uniform float3 _WindOffset;
 uniform float2 _CoverageWindOffset;
-// uniform float2 _HighCloudsWindOffset;
-
-// uniform float _CoverageHigh;
-// uniform float _CoverageHighScale;
-// uniform float _HighCloudsScale;
 
 uniform float2 _LowFreqMinMax;
 uniform float _HighFreqModifier;
-
-// uniform float4 _Gradient1;
-// uniform float4 _Gradient2;
-// uniform float4 _Gradient3;
 
 uniform int _Steps;
 
@@ -167,31 +150,6 @@ float SampleGradient(float4 gradient, float height)
 	return smoothstep(gradient.x, gradient.y, height) - smoothstep(gradient.z, gradient.w, height);
 }
 
-// lerps between cloud type gradients and samples it
-// float getDensityHeightGradient(float height, float3 weatherData)
-// {
-// 	float type = weatherData.g;
-// 	float4 gradient = lerp(lerp(_Gradient1, _Gradient2, type * 2.0), _Gradient3, saturate((type - 0.5) * 2.0));
-// 	return sampleGradient(gradient, height);
-// }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///与上面方法的结果差别很大
-///原因是c#代码出错。导致_gradient1, _gradient2 都为 0
-// float4 GetHeightGradient(float cloudType)
-// {
-// 	const float4 CloudGradient1 = float4(0.0, 0.065, 0.203, 0.371);
-// 	const float4 CloudGradient2 = float4(0.0, 0.156, 0.468, 0.674);
-// 	const float4 CloudGradient3 = float4(0.0, 0.188, 0.818, 1);
-//
-// 	// float a = 1.0 - saturate(cloudType * 2.0);
-// 	// float b = 1.0 - abs(cloudType - 0.5) * 2.0;
-// 	// float c = saturate(cloudType - 0.5) * 2.0;
-// 	//
-// 	// return CloudGradient1 * a + CloudGradient2 * b + CloudGradient3 * c;
-// 	return lerp(lerp(CloudGradient1, CloudGradient2, cloudType * 2.0), CloudGradient3, saturate(cloudType - 0.5) * 2.0);
-// }
-
 float GetDensityHeightGradientForPoint(float height_fraction, float3 weather_data)
 {
 	float cloudType = weather_data.g;
@@ -226,46 +184,6 @@ float3 GetWeatherData(float3 pos)
 	weatherData.r = saturate(weatherData.r - _Coverage); //c#中coverage 越大，这里的_Coverage越小，需要减少的值越少
 	return weatherData;
 }
-
-// samples cloud density
-// 	float sampleCloudDensity(float3 p, float heightFraction, float3 weatherData, float lod, bool sampleDetail)
-// 	{
-// 		float3 pos = p + _WindOffset; // add wind offset
-// 		pos += heightFraction * _WindDirection * 700.0; // shear at higher altitude
-//
-// // #if defined(DEBUG_NO_LOW_FREQ_NOISE)
-// // 		float cloudSample = 0.7;
-// // 		cloudSample = remap(cloudSample, _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0);
-// // #else
-// 		float cloudSample = tex3Dlod(_ShapeTexture, float4(pos * _Scale, lod)).r; // sample cloud shape texture
-// 		cloudSample = remap(cloudSample * pow(1.2 - heightFraction, 0.1), _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0); // pick certain range from sample texture
-// // #endif
-// 		cloudSample *= getDensityHeightGradient(heightFraction, weatherData); // multiply cloud by its type gradient
-//
-// 		float cloudCoverage = weatherData.r;
-// 		cloudSample = saturate(remap(cloudSample, saturate(heightFraction / cloudCoverage), 1.0, 0.0, 1.0)); // Change cloud coverage based by height and use remap to reduce clouds outside coverage
-// 		cloudSample *= cloudCoverage; // multiply by cloud coverage to smooth them out, GPU Pro 7
-//
-// // #if defined(DEBUG_NO_HIGH_FREQ_NOISE)
-// // 		cloudSample = remap(cloudSample, 0.2, 1.0, 0.0, 1.0);
-// // #else
-// 		if (cloudSample > 0.0 && sampleDetail) // If cloud sample > 0 then erode it with detail noise
-// 		{
-// // #if defined(DEBUG_NO_CURL)
-// // #else
-// 			float3 curlNoise = mad(tex2Dlod(_CurlNoise, float4(p.xz * _CurlDistortScale, 0, 0)).rgb, 2.0, -1.0); // sample Curl noise and transform it from [0, 1] to [-1, 1]
-// 			pos += float3(curlNoise.r, curlNoise.b, curlNoise.g) * heightFraction * _CurlDistortAmount; // distort position with curl noise
-// // #endif
-// 			float detailNoise = tex3Dlod(_DetailTexture, float4(pos * _DetailScale, lod)).r; // Sample detail noise
-//
-// 			float highFreqNoiseModifier = lerp(1.0 - detailNoise, detailNoise, saturate(heightFraction * 10.0)); // At lower cloud levels invert it to produce more wispy shapes and higher billowy
-//
-// 			cloudSample = remap(cloudSample, highFreqNoiseModifier * _HighFreqModifier, 1.0, 0.0, 1.0); // Erode cloud edges
-// 		}
-// // #endif
-//
-// 		return max(cloudSample * _SampleMultiplier, 0.0);
-// 	}
 
 float SampleCloudDensity(float3 pos, float height_fraction, float3 weatherData, float mip_level, bool is_cheap)
 {	
@@ -349,67 +267,6 @@ float SampleCloudDensityAlongCone(float3 pos, int mip_level, float3 lightDir)
 
 	return densityAlongCone;
 }
-
-// float3 sampleConeToLight(float3 pos, float3 lightDir, float cosAngle, float density, float3 initialWeather, float lod)
-// 	{
-// #if defined(RANDOM_UNIT_SPHERE)
-// #else
-// 		const float3 RandomUnitSphere[5] = // precalculated random vectors
-// 		{
-// 			{ -0.6, -0.8, -0.2 },
-// 		{ 1.0, -0.3, 0.0 },
-// 		{ -0.7, 0.0, 0.7 },
-// 		{ -0.2, 0.6, -0.8 },
-// 		{ 0.4, 0.3, 0.9 }
-// 		};
-// #endif
-// 		float heightFraction;
-// 		float densityAlongCone = 0.0;
-// 		const int steps = 5; // light cone step count
-// 		float3 weatherData;
-// 		for (int i = 0; i < steps; i++) {
-// 			pos += lightDir * _LightStepLength; // march forward
-// #if defined(RANDOM_UNIT_SPHERE) // apply random vector to achive cone shape
-// 			float3 randomOffset = rand3(pos) * _LightStepLength * _LightConeRadius * ((float)(i + 1));
-// #else
-// 			float3 randomOffset = RandomUnitSphere[i] * _LightStepLength * _LightConeRadius * ((float)(i + 1));
-// #endif
-// 			float3 p = pos + randomOffset; // light sample point
-// 			// sample cloud
-// 			heightFraction = getHeightFractionForPoint(p); 
-// 			weatherData = sampleWeather(p);
-// 			densityAlongCone += sampleCloudDensity(p, heightFraction, weatherData, lod + ((float)i) * 0.5, true) * weatherDensity(weatherData);
-// 		}
-//
-// // #if defined(SLOW_LIGHTING) // if doing slow lighting then do more samples in straight line
-// // 		pos += 24.0 * _LightStepLength * lightDir;
-// // 		weatherData = sampleWeather(pos);
-// // 		heightFraction = getHeightFractionForPoint(pos);
-// // 		densityAlongCone += sampleCloudDensity(pos, heightFraction, weatherData, lod, true) * 2.0;
-// // 		int j = 0;
-// // 		while (1) {
-// // 			if (j > 22) {
-// // 				break;
-// // 			}
-// // 			pos += 4.25 * _LightStepLength * lightDir;
-// // 			weatherData = sampleWeather(pos);
-// // 			if (weatherData.r > 0.05) {
-// // 				heightFraction = getHeightFractionForPoint(pos);
-// // 				densityAlongCone += sampleCloudDensity(pos, heightFraction, weatherData, lod, true);
-// // 			}
-// //
-// // 			j++;
-// // 		}
-// // #else
-// 		pos += 32.0 * _LightStepLength * lightDir; // light sample from further away
-// 		weatherData = sampleWeather(pos);
-// 		heightFraction = getHeightFractionForPoint(pos);
-// 		densityAlongCone += sampleCloudDensity(pos, heightFraction, weatherData, lod + 2, false) * weatherDensity(weatherData) * 3.0;
-// // #endif
-// 		
-// 		return calculateLightEnergy(densityAlongCone, cosAngle, density) * _SunColor;
-// 	}
-
 
 // ray marches clouds
 fixed4 Raymarch(float3 rayOrigin, float3 rayDirection, float stepSize, float steps, float cosAngle)

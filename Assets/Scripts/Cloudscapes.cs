@@ -104,7 +104,7 @@ public class Cloudscapes : MonoBehaviour
     
     private Vector3 _windOffset;
     private Vector2 _coverageWindOffset;
-    private Vector2 _highCloudsWindOffset;
+    // private Vector2 _highCloudsWindOffset;
     private Vector3 _windDirectionVector;
     private float _multipliedWindSpeed;
     
@@ -123,10 +123,7 @@ public class Cloudscapes : MonoBehaviour
         
         _windOffset = new Vector3(0.0f, 0.0f, 0.0f);
         _coverageWindOffset = new Vector3(0.5f / (weatherScale * 0.00025f), 0.5f / (weatherScale * 0.00025f));
-        _highCloudsWindOffset = new Vector3(1500.0f, -900.0f);
-        
-        
-
+        // _highCloudsWindOffset = new Vector3(1500.0f, -900.0f);
         
     }
 
@@ -146,10 +143,7 @@ public class Cloudscapes : MonoBehaviour
         float angleCoverage = coverageWindDirection * Mathf.Deg2Rad;
         Vector2 coverageDirecton = new Vector2(Mathf.Cos(angleCoverage), Mathf.Sin(angleCoverage));
         _coverageWindOffset += coverageWindSpeed * globalMultiplier * coverageDirecton * Time.deltaTime;
-
-        // float angleHighClodus = highCloudsWindDirection * Mathf.Deg2Rad;
-        // Vector2 highCloudsDirection = new Vector2(Mathf.Cos(angleHighClodus), Mathf.Sin(angleHighClodus));
-        // _highCloudsWindOffset += highCloudsWindSpeed * globalMultiplier * highCloudsDirection * Time.deltaTime;
+        
     }
     
     private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -239,15 +233,11 @@ public class Cloudscapes : MonoBehaviour
 
         skyMaterial.SetFloat("_CloudSpeed", _multipliedWindSpeed);
         skyMaterial.SetVector("_WindDirection", _windDirectionVector);
-        // skyMaterial.SetVector("_WindOffset", _windOffset);
         skyMaterial.SetVector("_CoverageWindOffset", _coverageWindOffset);
-        skyMaterial.SetVector("_HighCloudsWindOffset", _highCloudsWindOffset);
+        // skyMaterial.SetVector("_HighCloudsWindOffset", _highCloudsWindOffset);
         
         skyMaterial.SetInt("_Steps", steps);
-
-        // skyMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
-        // skyMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
+        
         skyMaterial.SetVector("_CameraWS", cameraPos);
-        // skyMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
     }
 }

@@ -382,11 +382,6 @@ SubShader {
             if(y < 0.0)
             {
                 col += IN.sunColor * calcSunAttenuation(_WorldSpaceLightPos0.xyz, -ray);
-
-                
-                
-                
-		        // }
             }
         // #endif
 
@@ -394,7 +389,6 @@ SubShader {
             {
                 float3 ro = _CameraWS;
                 float3 rd = -ray;
-                // col += RayMarch(cameraPos, -ray, kInnerRadius);
                 
                 float3 rs;
                 float3 re;
@@ -405,22 +399,22 @@ SubShader {
                 rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.x);
 		        // if (rs.y >= _ZeroPoint.y) // If ray starting position is below horizon
 		        // {
-			        re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
-		            steps = lerp(_Steps, _Steps * 0.5, rd.y);
-		            stepSize = (distance(re, rs)) / steps;
+                
+			    re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
+		        steps = lerp(_Steps, _Steps * 0.5, rd.y);
+		        stepSize = (distance(re, rs)) / steps;
 
-	    //                             #if defined(RANDOM_JITTER_WHITE)
-	    // rs += rd * stepSize * rand(_Time.zw + duv) * BIG_STEP * 0.75;
-    //       #endif
-    //       #if defined(RANDOM_JITTER_BLUE)
-	    //         rs += rd * stepSize * BIG_STEP * 0.75 * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy);
-    //       #endif
+	// #if defined(RANDOM_JITTER_WHITE)
+	//     rs += rd * stepSize * rand(_Time.zw + duv) * BIG_STEP * 0.75;
+    // #endif
+    // #if defined(RANDOM_JITTER_BLUE)
+	//     rs += rd * stepSize * BIG_STEP * 0.75 * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy);
+    // #endif
 
-                    float cosAngle = dot(rd, _SunDir);
-                    fixed4 cloud3D = Raymarch(rs, rd, stepSize, steps, cosAngle);
+                float cosAngle = dot(rd, _SunDir);
+                fixed4 cloud3D = Raymarch(rs, rd, stepSize, steps, cosAngle);
 
                 cloud3D *= 1- saturate(y/2);
-		            // col += cloud3D.rgb * cloud3D.a;
 		        col = lerp(col, cloud3D.rgb, cloud3D.a);
             }
             
